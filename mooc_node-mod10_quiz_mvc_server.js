@@ -21,7 +21,7 @@ const options = { logging: false, operatorsAliases: false};
 const sequelize = new Sequelize("sqlite:db.sqlite", options);
 
 const quizzes = sequelize.define(  // define table quizzes
-    'quizzes',     
+    'quizzes',
     {   question: Sequelize.STRING,
         answer: Sequelize.STRING
     }
@@ -31,7 +31,7 @@ sequelize.sync() // Syncronize DB and seed if needed
 .then(() => quizzes.count())
 .then((count) => {
     if (count===0) {
-        return ( 
+        return (
             quizzes.bulkCreate([
                 { id: 1, question: "Capital of Italy",    answer: "Rome" },
                 { id: 2, question: "Capital of France",   answer: "Paris" },
@@ -51,17 +51,17 @@ sequelize.sync() // Syncronize DB and seed if needed
 
 const index = (quizzes) => `<!-- HTML view -->
 <html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head> 
-    <body> 
+    <head><title>MVC Example</title><meta charset="utf-8"></head>
+    <body>
         <h1>MVC: Quizzes</h1>`
 + quizzes.reduce(
-    (ac, quiz) => ac += 
+    (ac, quiz) => ac +=
 `       <a href="/quizzes/${quiz.id}/play">${quiz.question}</a>
         <a href="/quizzes/${quiz.id}/edit"><button>Edit</button></a>
         <a href="/quizzes/${quiz.id}?_method=DELETE"
            onClick="return confirm('Delete: ${quiz.question}')">
            <button>Delete</button></a>
-        <br>\n`, 
+        <br>\n`,
     ""
 )
 + `     <p/>
@@ -71,7 +71,7 @@ const index = (quizzes) => `<!-- HTML view -->
 
 const play = (id, question, response) => `<!-- HTML view -->
 <html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head> 
+    <head><title>MVC Example</title><meta charset="utf-8"></head>
     <body>
         <h1>MVC: Quizzes</h1>
         <form   method="get"   action="/quizzes/${id}/check">
@@ -86,7 +86,7 @@ const play = (id, question, response) => `<!-- HTML view -->
 
 const check = (id, msg, response) => `<!-- HTML view -->
 <html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head> 
+    <head><title>MVC Example</title><meta charset="utf-8"></head>
     <body>
         <h1>MVC: Quizzes</h1>
         <strong><div id="msg">${msg}</div></strong>
@@ -98,14 +98,14 @@ const check = (id, msg, response) => `<!-- HTML view -->
 
 const quizForm =(msg, method, action, question, answer) => `<!-- HTML view -->
 <html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head> 
+    <head><title>MVC Example</title><meta charset="utf-8"></head>
     <body>
         <h1>MVC: Quizzes</h1>
         <form   method="${method}"   action="${action}">
             ${msg}: <p>
             <input  type="text"  name="question" value="${question}" placeholder="Question" />
             <input  type="text"  name="answer"   value="${answer}"   placeholder="Answer" />
-            <input  type="submit" value="Create"/> <br>
+            <input  type="submit" value="Save"/> <br>
         </form>
         </p>
         <a href="/quizzes"><button>Go back</button></a>
@@ -117,7 +117,7 @@ const quizForm =(msg, method, action, question, answer) => `<!-- HTML view -->
 
 // GET /, GET /quizzes
 const indexController = (req, res, next) => {
- 
+
     quizzes.findAll()
     .then((quizzes) => res.send(index(quizzes)))
     .catch((error) => `DB Error:\n${error}`);
@@ -141,7 +141,7 @@ const checkController = (req, res, next) => {
     quizzes.findById(id)
     .then((quiz) => {
         msg = (quiz.answer===response) ?
-              `Yes, "${response}" is the ${quiz.question}` 
+              `Yes, "${response}" is the ${quiz.question}`
             : `No, "${response}" is not the ${quiz.question}`;
         return res.send(check(id, msg, response));
     })
@@ -150,19 +150,32 @@ const checkController = (req, res, next) => {
 
 //  GET /quizzes/1/edit
 const editController = (req, res, next) => {
+  // .... introducir código
+  let id = Number(req.params.id);
 
-     // .... introducir código
+  quizzes.findById(id)
+  .then((quiz) => {
+    res.send(quizForm("Edit Quiz", "post", `/quizzes/${id}?_method=PUT`, `${quiz.question}`, `${quiz.answer}`));
+  })
+  .catch((error) => `A DB Error has occurred:\n${error}`);
 };
 
 //  PUT /quizzes/1
 const updateController = (req, res, next) => {
-
      // .... introducir código
+     let {question, answer} = req.body; // Recuperamos datos del formulario enviado
+     let id = Number(req.params.id);    // Recuperamos parámetro id desde la ruta del formulario enviado
+
+     quizzes.update(
+       { question: question, answer: answer }, // Asignamos valores para el update ...
+       { where: { id : id } } // ... sólo se modifica el registro con valor id
+     )
+     .then(() => res.redirect('/quizzes')) // ... si fue bien redirigimos al form principal
+     .catch((error) => `Quiz not updated:\n${error}`);
 };
 
 // GET /quizzes/new
 const newController = (req, res, next) => {
-
     res.send(quizForm("Create new Quiz", "post", "/quizzes", "", ""));
  };
 
@@ -192,16 +205,16 @@ app.get('/quizzes/:id/check', checkController);
 app.get('/quizzes/new',       newController);
 app.post('/quizzes',          createController);
 
-    // ..... instalar los MWs asociados a
-    //   GET  /quizzes/:id/edit,   PUT  /quizzes/:id y  DELETE  /quizzes/:id
-
+// ..... instalar los MWs asociados a
+//   GET  /quizzes/:id/edit,   PUT  /quizzes/:id y  DELETE  /quizzes/:id
+app.get('/quizzes/:id/edit',  editController);    // GET  /quizzes/:id/edit
+app.put('/quizzes/:id',       updateController);  // PUT  /quizzes/:id
 
 app.all('*', (req, res) =>
     res.send("Error: resource not found or method not supported")
-);        
+);
 
 
    // Server started at port 8000
 
 app.listen(8000);
-
