@@ -49,6 +49,17 @@ sequelize.sync() // Syncronize DB and seed if needed
 
    // VIEWs
 
+
+/*
+<!-- Sustituido por el form ...
+<a href="/quizzes/${quiz.id}?_method=DELETE" onClick="return confirm('Delete: ${quiz.question}')">
+   <button>Delete</button>
+</a>
+... para que funcione correctamente el método DELETE sin especificar app.use(methodOverride('_method', { methods: ['POST', 'GET'] });
+debido a las explicaciones de https://philipm.at/2017/method-override_in_expressjs.html, en resumen ...
+... DELETE así va vía POST que no permite URLs vía GET que puedan realizar eliminaciones 
+//-->
+*/
 const index = (quizzes) => `<!-- HTML view -->
 <html>
     <head><title>MVC Example</title><meta charset="utf-8"></head>
@@ -58,9 +69,9 @@ const index = (quizzes) => `<!-- HTML view -->
     (ac, quiz) => ac +=
 `       <a href="/quizzes/${quiz.id}/play">${quiz.question}</a>
         <a href="/quizzes/${quiz.id}/edit"><button>Edit</button></a>
-        <a href="/quizzes/${quiz.id}?_method=DELETE"
-           onClick="return confirm('Delete: ${quiz.question}')">
-           <button>Delete</button></a>
+        <form style="display: inline" method="post" action="/quizzes/${quiz.id}?_method=DELETE" onSubmit="return confirm('Delete: ${quiz.question}')">
+           <input type="submit" value="Delete">
+        </form>
         <br>\n`,
     ""
 )
@@ -151,10 +162,10 @@ const checkController = (req, res, next) => {
 //  GET /quizzes/1/edit
 const editController = (req, res, next) => {
   // .... introducir código
-  let id = Number(req.params.id);
+  let id = Number(req.params.id); // Recuperamos parámetro id desde la ruta del formulario enviado ...
 
-  quizzes.findById(id)
-  .then((quiz) => {
+  quizzes.findById(id) // ... buscamos registro a modificar ...
+  .then((quiz) => { // ... y creamos petición de formulario del quizz en modo edición
     res.send(quizForm("Edit Quiz", "post", `/quizzes/${id}?_method=PUT`, `${quiz.question}`, `${quiz.answer}`));
   })
   .catch((error) => `A DB Error has occurred:\n${error}`);
@@ -191,8 +202,16 @@ const createController = (req, res, next) => {
 
 // DELETE /quizzes/1
 const destroyController = (req, res, next) => {
-
      // .... introducir código
+     let id = Number(req.params.id);    // Recuperamos parámetro id desde la ruta del formulario enviado ...
+
+     console.log(`req.params.id => ${req.params.id}`);
+
+     quizzes.destroy(
+       { where: { id : id } } // ... sólo se elimina el registro con valor id
+     )
+     .then(() => res.redirect('/quizzes')) // ... si fue bien redirigimos al form principal
+     .catch((error) => `Quiz not delete:\n${error}`);
  };
 
 
@@ -209,9 +228,32 @@ app.post('/quizzes',          createController);
 //   GET  /quizzes/:id/edit,   PUT  /quizzes/:id y  DELETE  /quizzes/:id
 app.get('/quizzes/:id/edit',  editController);    // GET  /quizzes/:id/edit
 app.put('/quizzes/:id',       updateController);  // PUT  /quizzes/:id
+app.delete('/quizzes/:id',    destroyController); // DELETE  /quizzes/:id
 
 app.all('*', (req, res) =>
-    res.send("Error: resource not found or method not supported")
+    res.send(`Error: resource not found or method not supported.
+      <br/>   req.app => ${req.app}
+      <br/>   req.baseUrl => ${req.baseUrl}
+      <br/>   req.body => ${JSON.stringify(req.body)}
+      <br/>   req.cookies => ${req.cookies}
+      <br/>   req.fresh => ${req.fresh}
+      <br/>   req.hostname => ${req.hostname}
+      <br/>   req.ip => ${req.ip}
+      <br/>   req.ips => ${req.ips}
+      <br/>   req.method => ${req.method}
+      <br/>   req.originalUrl => ${req.originalUrl}
+      <br/>   req.params => ${JSON.stringify(req.params)}
+      <br/>   req.params.id => ${JSON.stringify(req.params.id)}
+      <br/>   req.path => ${req.path}
+      <br/>   req.protocol => ${req.protocol}
+      <br/>   req.query => ${JSON.stringify(req.query)}
+      <br/>   req.route => ${JSON.stringify(req.route)}
+      <br/>   req.secure => ${req.secure}
+      <br/>   req.signedCookies => ${req.signedCookies}
+      <br/>   req.stale => ${req.stale}
+      <br/>   req.subdomains => ${req.subdomains}
+      <br/>   req.xhr  => ${req.xhr}`
+  )
 );
 
 
