@@ -57,7 +57,7 @@ sequelize.sync() // Syncronize DB and seed if needed
 </a>
 ... para que funcione correctamente el método DELETE sin especificar app.use(methodOverride('_method', { methods: ['POST', 'GET'] });
 debido a las explicaciones de https://philipm.at/2017/method-override_in_expressjs.html, en resumen ...
-... DELETE así va vía POST que no permite URLs vía GET que puedan realizar eliminaciones 
+... DELETE así va vía POST que no permite URLs vía GET que puedan realizar eliminaciones
 //-->
 */
 const index = (quizzes) => `<!-- HTML view -->
@@ -82,28 +82,43 @@ const index = (quizzes) => `<!-- HTML view -->
 
 const play = (id, question, response) => `<!-- HTML view -->
 <html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head>
+    <head>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript">
+    $(function(){
+      $('#result').hide();
+      $('#btnTryAgain').hide();
+      $('#btnTryAgain').on('click', function() {
+        $('#response').focus().select();
+      });
+      $('#submit').on('click', function() {
+        $.ajax({
+          type: 'GET',
+          url: '/quizzes/${id}/check',
+          success: function(response) {
+            let msg = $('#response').val() === response ?
+                  "Yes, '"+ $('#response').val() + "' is the ${question}"
+                : "No, '"+ $('#response').val() + "' is not the ${question}";
+            $('#result').html(msg);
+            $('#result').show();
+            $('#btnTryAgain').show();
+          }
+        })
+      })
+    });
+    </script>
+    <title>MVC Example</title><meta charset="utf-8">
+    </head>
     <body>
         <h1>MVC: Quizzes</h1>
-        <form   method="get"   action="/quizzes/${id}/check">
+        <div id="form">
             ${question}: <p>
-            <input type="text" name="response" value="${response}" placeholder="Answer" />
-            <input type="submit" value="Check"/> <br>
-        </form>
-        </p>
+            <input type="text" id="response" value="" placeholder="Answer" />
+            <button id="submit">Check</button></p>
+        </div>
+        <strong><div id="result"></div></strong>
         <a href="/quizzes"><button>Go back</button></a>
-    </body>
-</html>`;
-
-const check = (id, msg, response) => `<!-- HTML view -->
-<html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head>
-    <body>
-        <h1>MVC: Quizzes</h1>
-        <strong><div id="msg">${msg}</div></strong>
-        <p>
-        <a href="/quizzes"><button>Go back</button></a>
-        <a href="/quizzes/${id}/play?response=${response}"><button>Try again</button></a>
+        <button id="btnTryAgain">Try again</button>
     </body>
 </html>`;
 
@@ -146,15 +161,11 @@ const playController = (req, res, next) => {
 
 //  GET  /quizzes/1/check
 const checkController = (req, res, next) => {
-    let response = req.query.response, msg;
     let id = Number(req.params.id);
 
-    quizzes.findById(id)
-    .then((quiz) => {
-        msg = (quiz.answer===response) ?
-              `Yes, "${response}" is the ${quiz.question}`
-            : `No, "${response}" is not the ${quiz.question}`;
-        return res.send(check(id, msg, response));
+    quizzes.findById(id) // Buscamos registro con id ...
+    .then((quiz) => { // Al sólo haber una instrucción, dicha es el return de esta promesa (nos ahorramos return)
+      res.send(quiz.answer); // ... devolvemos sólo respuesta,
     })
     .catch((error) => `A DB Error has occurred:\n${error}`);
 };
@@ -166,6 +177,7 @@ const editController = (req, res, next) => {
 
   quizzes.findById(id) // ... buscamos registro a modificar ...
   .then((quiz) => { // ... y creamos petición de formulario del quizz en modo edición
+    // Al sólo haber una instrucción, dicha es el return de esta promesa (nos ahorramos return)
     res.send(quizForm("Edit Quiz", "post", `/quizzes/${id}?_method=PUT`, `${quiz.question}`, `${quiz.answer}`));
   })
   .catch((error) => `A DB Error has occurred:\n${error}`);
@@ -231,10 +243,11 @@ app.put('/quizzes/:id',       updateController);  // PUT  /quizzes/:id
 app.delete('/quizzes/:id',    destroyController); // DELETE  /quizzes/:id
 
 app.all('*', (req, res) =>
+  // Para depuración incluimos todas las propiedades del req
     res.send(`Error: resource not found or method not supported.
       <br/>   req.app => ${req.app}
       <br/>   req.baseUrl => ${req.baseUrl}
-      <br/>   req.body => ${JSON.stringify(req.body)}
+      <br/>   req.body => ${JSON.stringify(req.body, null, 4)}
       <br/>   req.cookies => ${req.cookies}
       <br/>   req.fresh => ${req.fresh}
       <br/>   req.hostname => ${req.hostname}
@@ -242,12 +255,12 @@ app.all('*', (req, res) =>
       <br/>   req.ips => ${req.ips}
       <br/>   req.method => ${req.method}
       <br/>   req.originalUrl => ${req.originalUrl}
-      <br/>   req.params => ${JSON.stringify(req.params)}
-      <br/>   req.params.id => ${JSON.stringify(req.params.id)}
+      <br/>   req.params => ${JSON.stringify(req.params, null, 4)}
+      <br/>   req.params.id => ${JSON.stringify(req.params.id, null, 4)}
       <br/>   req.path => ${req.path}
       <br/>   req.protocol => ${req.protocol}
-      <br/>   req.query => ${JSON.stringify(req.query)}
-      <br/>   req.route => ${JSON.stringify(req.route)}
+      <br/>   req.query => ${JSON.stringify(req.query, null, 4)}
+      <br/>   req.route => ${JSON.stringify(req.route, null, 4)}
       <br/>   req.secure => ${req.secure}
       <br/>   req.signedCookies => ${req.signedCookies}
       <br/>   req.stale => ${req.stale}
