@@ -1,5 +1,6 @@
 
 const express = require('express');
+const path = require('path');
 const app = express();
 
    // Import MW for parsing POST params in BODY
@@ -62,21 +63,29 @@ debido a las explicaciones de https://philipm.at/2017/method-override_in_express
 */
 const index = (quizzes) => `<!-- HTML view -->
 <html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head>
+    <head>
+      <title>MVC Example</title>
+      <meta charset="utf-8">
+      <link href="/estilo_quiz.css" rel="stylesheet" type="text/css">
+    </head>
     <body>
-        <h1>MVC: Quizzes</h1>`
+      <header>MVC: Quizzes</header>
+        <div class="divTable">`
 + quizzes.reduce(
     (ac, quiz) => ac +=
-`       <a href="/quizzes/${quiz.id}/play">${quiz.question}</a>
-        <a href="/quizzes/${quiz.id}/edit"><button>Edit</button></a>
-        <form style="display: inline" method="post" action="/quizzes/${quiz.id}?_method=DELETE" onSubmit="return confirm('Delete: ${quiz.question}')">
+`<div class="divTableRow">
+       <div class="divTableHeading"><a href="/quizzes/${quiz.id}/play">${quiz.question}</a></div>
+        <div class="divTableCell"><a href="/quizzes/${quiz.id}/edit"><button>Edit</button></a></div>
+        <div class="divTableCell"><form style="display: inline" method="post" action="/quizzes/${quiz.id}?_method=DELETE" onSubmit="return confirm('Delete: ${quiz.question}')">
            <input type="submit" value="Delete">
-        </form>
-        <br>\n`,
+        </form></div>
+        </div>`,
     ""
 )
-+ `     <p/>
-        <a href="/quizzes/new"><button>New Quiz</button></a>
++ `
+    </div>
+    <a href="/quizzes/new"><button>New Quiz</button></a>
+    <footer>&copy; Juan Manuel Hern&aacute;ndez Guill&eacute;n</footer>
     </body>
 </html>`;
 
@@ -107,34 +116,42 @@ const play = (id, question, response) => `<!-- HTML view -->
       })
     });
     </script>
-    <title>MVC Example</title><meta charset="utf-8">
+    <title>MVC Example</title>
+    <meta charset="utf-8">
+    <link href="/estilo_quiz.css" rel="stylesheet" type="text/css">
     </head>
     <body>
-        <h1>MVC: Quizzes</h1>
-        <div id="form">
-            ${question}: <p>
-            <input type="text" id="response" value="" placeholder="Answer" />
-            <button id="submit">Check</button></p>
-        </div>
-        <strong><div id="result"></div></strong>
-        <a href="/quizzes"><button>Go back</button></a>
-        <button id="btnTryAgain">Try again</button>
+      <header>MVC: Quizzes</header>
+      <div id="form">
+          ${question}: <p>
+          <input type="text" id="response" value="" placeholder="Answer" />
+          <button id="submit">Check</button></p>
+      </div>
+      <strong><div id="result"></div></strong>
+      <a href="/quizzes"><button>Go back</button></a>
+      <button id="btnTryAgain">Try again</button>
+      <footer>&copy; Juan Manuel Hern&aacute;ndez Guill&eacute;n</footer>
     </body>
 </html>`;
 
 const quizForm =(msg, method, action, question, answer) => `<!-- HTML view -->
 <html>
-    <head><title>MVC Example</title><meta charset="utf-8"></head>
+    <head>
+    <title>MVC Example</title>
+    <meta charset="utf-8">
+    <link href="/estilo_quiz.css" rel="stylesheet" type="text/css">
+    </head>
     <body>
-        <h1>MVC: Quizzes</h1>
-        <form   method="${method}"   action="${action}">
-            ${msg}: <p>
-            <input  type="text"  name="question" value="${question}" placeholder="Question" />
-            <input  type="text"  name="answer"   value="${answer}"   placeholder="Answer" />
-            <input  type="submit" value="Save"/> <br>
-        </form>
-        </p>
-        <a href="/quizzes"><button>Go back</button></a>
+      <header>MVC: Quizzes</header>
+      <form   method="${method}"   action="${action}">
+          <h1> ${msg}:</h1> <p>
+          <input  type="text"  name="question" value="${question}" placeholder="Question" />
+          <input  type="text"  name="answer"   value="${answer}"   placeholder="Answer" />
+          <input  type="submit" value="Save"/> <br>
+      </form>
+      </p>
+      <a href="/quizzes"><button>Go back</button></a>
+      <footer>&copy; Juan Manuel Hern&aacute;ndez Guill&eacute;n</footer>
     </body>
 </html>`;
 
@@ -229,6 +246,10 @@ const destroyController = (req, res, next) => {
 
 
    // ROUTER
+
+// Archivos estáticos en el raiz del servidor, .css por ejemplo
+// Hay que especificar la ruta del los ficheros, p.e. /estilo_quiz.css
+app.use('/', express.static(path.join(__dirname, '/')));
 
 app.get(['/', '/quizzes'],    indexController);
 app.get('/quizzes/:id/play',  playController);

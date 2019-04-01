@@ -1,0 +1,87 @@
+@charset "utf-8";
+/* CSS Document */
+body, html {
+	height: 100%;
+	width: 100%;
+	margin: 0px;
+	padding: 0px;
+}
+
+h1 {
+	margin: 0;
+	margin-bottom: 0.5em;
+	text-transform: uppercase;
+	padding-left:0.5em;
+}
+
+a {
+	text-decoration: none;
+}
+
+input[type=submit], button {
+	background-color:#81d4fa;
+	padding:0.3rem;
+	border-radius:5px;
+	border:solid 1px #0288d1;
+	margin-top:0.3em;
+	margin-bottom:0.3em;
+	width:8em;
+	cursor:pointer;
+}
+
+input[type=submit]:hover, button:hover {
+	background-color:#0277bd;
+	color:white;
+}
+
+header {
+	font-family: 'Lato', sans-serif;
+	font-size: 2em;
+	color: #FFFFFF;
+	background-color: #666;
+	padding: 0.3rem;
+	padding-left: 2.2em;
+}
+
+footer {
+	font-family: 'Lato', sans-serif;
+	font-size: 0.8em;
+	color: #FFFFFF;
+	background-color: #666;
+	padding: 0.3rem;
+	padding-left: 2.2em;
+}
+
+/* DivTable.com */
+.divTable{
+ 	display: table; 
+	width: auto;
+}
+.divTableRow {
+	display: table-row;
+}
+.divTableHeading {
+	display: table-header-group;
+}
+.divTableCell, .divTableHead {
+	border: 0px;
+	display: table-cell;
+	padding: 3px 10px;
+}
+.divTableHeading:hover {
+	background-color: #0277bd;
+	cursor: pointer;
+}
+.divTableHeading {
+	display: table-cell;
+	font-weight: bold;
+	padding: 3px 10px;
+}
+.divTableFoot {
+	background-color: #81d4fa;
+	display: table-footer-group;
+	font-weight: bold;
+}
+.divTableBody {
+	display: table-row-group;
+}
